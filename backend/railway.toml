@@ -1,9 +1,0 @@
-# Railway deployment configuration
-[build]
-  command = "npm install"
-
-[deploy]
-  startCommand = "npm start"
-  
-[env]
-  NODE_ENV = "production"
