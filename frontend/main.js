@@ -1,10 +1,9 @@
 class WeatherAPI {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    // Use environment-based URL - change this to your deployed backend URL
     this.baseURL = window.location.hostname === 'localhost' 
       ? "http://localhost:5000/api" 
-      : "https://YOUR_ACTUAL_BACKEND_URL/api"; // Replace with your deployed backend URL
+      : "/api";
   }
 
   getCurrentWeather = async (query) => {
