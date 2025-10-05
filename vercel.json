@@ -1,40 +1,30 @@
 {
   "version": 2,
-  "name": "modern-weather-forecast-app",
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/style.css",
-      "dest": "/frontend/style.css"
+      "source": "/style.css",
+      "destination": "/frontend/style.css"
     },
     {
-      "src": "/main.js",
-      "dest": "/frontend/main.js"
+      "source": "/main.js",
+      "destination": "/frontend/main.js"
     },
     {
-      "src": "/sw.js",
-      "dest": "/frontend/sw.js"
+      "source": "/sw.js",
+      "destination": "/frontend/sw.js"
     },
     {
-      "src": "/(.*\\.(css|js|html|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/frontend/$1"
+      "source": "/(.*)\\.(css|js|html|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)",
+      "destination": "/frontend/$1.$2"
     },
     {
-      "src": "/(.*)",
-      "dest": "/frontend/index.html"
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
     }
   ],
   "functions": {
     "api/**/*.js": {
       "maxDuration": 10
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
