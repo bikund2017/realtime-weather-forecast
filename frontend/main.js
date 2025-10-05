@@ -1,215 +1,241 @@
-class WeatherAPI {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.baseURL = window.location.hostname === 'localhost' 
-      ? "http://localhost:5000/api" 
-      : "/api";
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "/api";
+let currentUnits = "metric";
+let currentTheme = "light";
+
+async function getWeather(query) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/weather?${query}`);
+    if (!response.ok) {
+      throw new Error("Weather data not found");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching weather:", error);
+    showError("Failed to get weather data. Please try again.");
+    return null;
   }
-
-  getCurrentWeather = async (query) => {
-    const url = `${this.baseURL}/weather?${query}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Weather data not found");
-    return await response.json();
-  };
-
-  getForecast = async (query) => {
-    const url = `${this.baseURL}/forecast?${query}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Forecast data not found");
-    return await response.json();
-  };
 }
 
-const WeatherApp = (() => {
-  const weatherService = new WeatherAPI();
+async function getForecast(query) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/forecast?${query}`);
+    if (!response.ok) {
+      throw new Error("Forecast data not found");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching forecast:", error);
+    return null;
+  }
+}
 
-  const weatherEmojis = new Map([
-    ["clear sky", "☀️"],
-    ["few clouds", "🌤️"],
-    ["scattered clouds", "⛅"],
-    ["broken clouds", "☁️"],
-    ["shower rain", "🌦️"],
-    ["rain", "🌧️"],
-    ["thunderstorm", "⛈️"],
-    ["snow", "❄️"],
-    ["mist", "🌫️"],
-    ["haze", "😶‍🌫️"],
-  ]);
+function displayWeather(data) {
+  if (!data) return;
 
-  const createWeatherCard = ({
-    name,
-    main: { temp, feels_like, humidity, pressure },
-    weather,
-    wind,
-  }) => {
-    const [{ description }] = weather;
-    const emoji = weatherEmojis.get(description) || "🌍";
+  document.getElementById(
+    "cityName"
+  ).textContent = `${data.name}, ${data.sys.country}`;
 
-    return `
-      <div class="city-name">${name} ${emoji}</div>
-      <div class="temperature">${Math.round(temp)}°C</div>
-      <div class="description">${description}</div>
-      <div class="weather-details">
-        <div class="detail-item">
-          <div>Feels like</div>
-          <div>${Math.round(feels_like)}°C</div>
-        </div>
-        <div class="detail-item">
-          <div>Humidity</div>
-          <div>${humidity}%</div>
-        </div>
-        <div class="detail-item">
-          <div>Pressure</div>
-          <div>${pressure} hPa</div>
-        </div>
-        <div class="detail-item">
-          <div>Wind Speed</div>
-          <div>${wind.speed} m/s</div>
-        </div>
-      </div>
+  // temperature
+  const temp = Math.round(data.main.temp);
+  const unit = currentUnits === "metric" ? "°C" : "°F";
+  document.getElementById("temperature").textContent = `${temp}${unit}`;
+
+  document.getElementById("description").textContent =
+    data.weather[0].description;
+
+  document.getElementById("feelsLike").textContent = `${Math.round(
+    data.main.feels_like
+  )}${unit}`;
+  document.getElementById("humidity").textContent = `${data.main.humidity}%`;
+  document.getElementById("windSpeed").textContent = `${data.wind.speed} ${
+    currentUnits === "metric" ? "m/s" : "mph"
+  }`;
+  document.getElementById("pressure").textContent = `${data.main.pressure} hPa`;
+
+  const weatherCard = document.getElementById("weatherCard");
+  weatherCard.style.display = "block";
+}
+
+function displayForecast(data) {
+  if (!data) return;
+
+  const forecastContainer = document.getElementById("forecastContainer");
+  forecastContainer.innerHTML = "";
+
+  const dailyForecasts = data.list
+    .filter((item, index) => index % 8 === 0)
+    .slice(0, 5);
+
+  dailyForecasts.forEach((forecast) => {
+    const date = new Date(forecast.dt * 1000);
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+    const temp = Math.round(forecast.main.temp);
+    const unit = currentUnits === "metric" ? "°C" : "°F";
+    const description = forecast.weather[0].description;
+    const emoji = getWeatherEmoji(forecast.weather[0].main);
+
+    const forecastItem = document.createElement("div");
+    forecastItem.className = "forecast-item";
+    forecastItem.innerHTML = `
+      <div class="forecast-day">${dayName}</div>
+      <div class="forecast-emoji">${emoji}</div>
+      <div class="forecast-temp">${temp}${unit}</div>
+      <div class="forecast-desc">${description}</div>
     `;
+
+    forecastContainer.appendChild(forecastItem);
+  });
+
+  document.getElementById("forecastSection").style.display = "block";
+}
+
+function getWeatherEmoji(condition) {
+  const emojiMap = {
+    Clear: "☀️",
+    Clouds: "☁️",
+    Rain: "🌧️",
+    Drizzle: "🌦️",
+    Thunderstorm: "⛈️",
+    Snow: "❄️",
+    Mist: "🌫️",
+    Fog: "🌫️",
   };
+  return emojiMap[condition] || "🌤️";
+}
 
-  const createForecastCards = (forecastData) => {
-    const dailyForecasts = forecastData.list
-      .filter((_, index) => index % 8 === 0)
-      .slice(0, 5) // first 5 days show
-      .map((forecast) => {
-        const date = new Date(forecast.dt * 1000);
-        const day = date.toLocaleDateString("en-US", { weekday: "short" });
-        const emoji =
-          weatherEmojis.get(forecast.weather[0].description) || "🌍";
+async function searchWeather() {
+  const cityInput = document.getElementById("cityInput");
+  const city = cityInput.value.trim();
 
-        return `
-          <div class="forecast-item">
-            <div class="forecast-day">${day}</div>
-            <div>${emoji}</div>
-            <div class="forecast-temp">${Math.round(forecast.main.temp)}°C</div>
-            <div>${forecast.weather[0].description}</div>
-          </div>
-        `;
-      });
+  if (!city) {
+    showError("Please enter a city name");
+    return;
+  }
 
-    return dailyForecasts.join("");
-  };
+  showLoading(true);
 
-  const getCurrentPosition = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation not supported"));
-        return;
-      }
+  const weatherData = await getWeather(`q=${city}`);
+  if (weatherData) {
+    displayWeather(weatherData);
 
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000,
-      });
-    });
-  };
+    const forecastData = await getForecast(`q=${city}`);
+    displayForecast(forecastData);
+  }
 
-  const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
+  showLoading(false);
+}
 
-  const showError = (element, message) => {
-    element.innerHTML = `<div class="error">❌ ${message}</div>`;
-  };
+async function getLocationWeather() {
+  if (!navigator.geolocation) {
+    showError("Geolocation is not supported by your browser");
+    return;
+  }
 
-  const displayWeather = async (query, queryType = "q") => {
-    const weatherCard = document.getElementById("weatherCard");
-    const forecastSection = document.getElementById("forecastSection");
-    const forecastContainer = document.getElementById("forecastContainer");
+  showLoading(true);
 
-    try {
-      weatherCard.innerHTML = `<div class="loading"></div>`;
-
-      const [weatherData, forecastData] = await Promise.all([
-        weatherService.getCurrentWeather(
-          queryType ? `${queryType}=${query}` : query
-        ),
-        weatherService.getForecast(queryType ? `${queryType}=${query}` : query),
-      ]);
-
-      weatherCard.innerHTML = createWeatherCard(weatherData);
-      forecastContainer.innerHTML = createForecastCards(forecastData);
-
-      forecastSection.style.display = "block";
-    } catch (error) {
-      showError(weatherCard, error.message);
-      forecastSection.style.display = "none";
-    }
-  };
-
-  const searchWeather = (city = "") => {
-    if (!city.trim()) {
-      showError(
-        document.getElementById("weatherCard"),
-        "Please enter a city name"
-      );
-      return;
-    }
-    displayWeather(city);
-  };
-
-  const searchByLocation = async () => {
-    const locationBtn = document.getElementById("locationBtn");
-    const originalText = locationBtn.innerHTML;
-
-    try {
-      locationBtn.innerHTML = `<div class="loading"></div>`;
-      locationBtn.disabled = true;
-
-      const position = await getCurrentPosition();
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
       const { latitude, longitude } = position.coords;
+      const weatherData = await getWeather(`lat=${latitude}&lon=${longitude}`);
+      if (weatherData) {
+        displayWeather(weatherData);
 
-      //  query type write in
-      await displayWeather(`lat=${latitude}&lon=${longitude}`, null);
-    } catch (error) {
+        const forecastData = await getForecast(
+          `lat=${latitude}&lon=${longitude}`
+        );
+        displayForecast(forecastData);
+      }
+      showLoading(false);
+    },
+    (error) => {
       showError(
-        document.getElementById("weatherCard"),
-        "Unable to get your location, please search manually."
+        "Unable to get your location. Please try searching for a city."
       );
-    } finally {
-      locationBtn.innerHTML = originalText;
-      locationBtn.disabled = false;
+      showLoading(false);
     }
-  };
+  );
+}
 
-  const intializeApp = () => {
-    const cityInput = document.getElementById("cityInput");
-    const searchBtn = document.getElementById("searchBtn");
-    const locationBtn = document.getElementById("locationBtn");
+function toggleUnits() {
+  currentUnits = currentUnits === "metric" ? "imperial" : "metric";
 
-    const debouncedSearch = debounce((value) => {
-      if (value.length > 2) {
-        searchWeather(value);
-      }
-    }, 300);
+  const toggle = document.getElementById("unitsToggle");
+  toggle.checked = currentUnits === "imperial";
 
-    cityInput.addEventListener("input", (e) => debouncedSearch(e.target.value));
+  const cityName = document.getElementById("cityName").textContent;
+  if (cityName) {
+    searchWeatherByName(cityName.split(",")[0]);
+  }
+}
 
-    cityInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        searchWeather(cityInput.value);
-      }
-    });
+function toggleTheme() {
+  currentTheme = currentTheme === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", currentTheme);
 
-    searchBtn.addEventListener("click", () => searchWeather(cityInput.value));
-    locationBtn.addEventListener("click", searchByLocation);
+  const themeIcon = document.querySelector(".theme-icon");
+  themeIcon.textContent = currentTheme === "dark" ? "☀️" : "🌙";
 
-    // load my current city ---
-    displayWeather("Noida");
-  };
+  localStorage.setItem("theme", currentTheme);
+}
 
-  return {
-    init: intializeApp,
-  };
-})();
+async function searchWeatherByName(cityName) {
+  showLoading(true);
+  const weatherData = await getWeather(`q=${cityName}`);
+  if (weatherData) {
+    displayWeather(weatherData);
+    const forecastData = await getForecast(`q=${cityName}`);
+    displayForecast(forecastData);
+  }
+  showLoading(false);
+}
 
-document.addEventListener("DOMContentLoaded", WeatherApp.init);
+function showLoading(show) {
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  loadingOverlay.style.display = show ? "flex" : "none";
+}
+
+function showError(message) {
+  const errorModal = document.getElementById("errorModal");
+  const errorMessage = document.getElementById("errorMessage");
+  errorMessage.textContent = message;
+  errorModal.style.display = "flex";
+}
+
+function hideError() {
+  const errorModal = document.getElementById("errorModal");
+  errorModal.style.display = "none";
+}
+
+function initApp() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    currentTheme = savedTheme;
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    const themeIcon = document.querySelector(".theme-icon");
+    themeIcon.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+  }
+
+  document.getElementById("searchBtn").addEventListener("click", searchWeather);
+  document
+    .getElementById("locationBtn")
+    .addEventListener("click", getLocationWeather);
+  document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+  document
+    .getElementById("unitsToggle")
+    .addEventListener("change", toggleUnits);
+  document.getElementById("closeErrorBtn").addEventListener("click", hideError);
+
+  document.getElementById("cityInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      searchWeather();
+    }
+  });
+
+  searchWeatherByName("Gautam Budh Nagar, IN");
+}
+
+document.addEventListener("DOMContentLoaded", initApp);

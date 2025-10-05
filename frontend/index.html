@@ -1,34 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      property="og:title"
+      content="Weather Forecast App - Portfolio Project"
+    />
+    <meta property="og:type" content="website" />
+
     <title>Weather Forecast App</title>
-    <link rel="stylesheet" href="style.css?v=1.1" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>"
+    />
+    <link rel="stylesheet" href="style.css?v=2.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <div class="container">
-      <h1 class="title-h1">Weather Forecast</h1>
+    <button
+      id="themeToggle"
+      class="theme-toggle"
+      aria-label="Toggle dark mode"
+      title="Toggle dark/light theme"
+    >
+      <span class="theme-icon">🌙</span>
+    </button>
 
-      <div class="search-section">
+    <main class="container">
+      <header class="app-header">
+        <h1 class="title-h1">
+          <span class="weather-icon">🌤️</span>
+          Weather Forecast
+        </h1>
+        <p class="subtitle">
+          Get detailed weather information for any location
+        </p>
+      </header>
+
+      <section class="search-section" role="search">
         <div class="search-container">
-          <input type="text" id="cityInput" placeholder="Enter city name..." />
-          <button id="searchBtn">Search</button>
-          <button
-            id="locationBtn"
-            class="geolocation-btn"
-            title="Use current location"
-          >
-            📍
-          </button>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="cityInput"
+              placeholder="Enter city name..."
+              aria-label="City name input"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="button-group">
+            <button id="searchBtn" aria-label="Search weather">
+              <span class="btn-icon">🔍</span>
+              <span class="btn-text">Search</span>
+            </button>
+            <button
+              id="locationBtn"
+              class="geolocation-btn"
+              aria-label="Use current location"
+              title="Get weather for current location"
+            >
+              <span class="btn-icon">📍</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div id="weatherCard" class="weather-card"></div>
+        <div class="units-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" id="unitsToggle" />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">
+              <span class="unit-label unit-celsius">°C</span>
+              <span class="unit-label unit-fahrenheit">°F</span>
+            </span>
+          </label>
+        </div>
+      </section>
 
-      <div id="forecastSection" class="forecast-section" style="display: none">
-        <h2 class="forecast-title">5-Day Forecast</h2>
+      <section
+        id="weatherCard"
+        class="weather-card"
+        style="display: none"
+        aria-live="polite"
+      >
+        <h2 id="cityName" class="city-name">City Name</h2>
+        <div id="temperature" class="temperature">--°</div>
+        <div id="description" class="description">Weather Description</div>
+
+        <div class="weather-details">
+          <div class="detail-item">
+            <div>Feels Like</div>
+            <div id="feelsLike">--°</div>
+          </div>
+          <div class="detail-item">
+            <div>Humidity</div>
+            <div id="humidity">--%</div>
+          </div>
+          <div class="detail-item">
+            <div>Wind Speed</div>
+            <div id="windSpeed">-- m/s</div>
+          </div>
+          <div class="detail-item">
+            <div>Pressure</div>
+            <div id="pressure">-- hPa</div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="forecastSection"
+        class="forecast-section"
+        style="display: none"
+        aria-labelledby="forecast-title"
+      >
+        <h2 id="forecast-title" class="forecast-title">5-Day Forecast</h2>
         <div id="forecastContainer" class="forecast-container"></div>
+      </section>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none">
+      <div class="loading-spinner"></div>
+      <p>Loading weather data...</p>
+    </div>
+
+    <div
+      id="errorModal"
+      class="error-modal"
+      style="display: none"
+      role="dialog"
+      aria-labelledby="error-title"
+      aria-modal="true"
+    >
+      <div class="error-content">
+        <h3 id="error-title">Error</h3>
+        <p id="errorMessage"></p>
+        <div class="error-actions">
+          <button id="retryBtn" class="retry-btn">Retry</button>
+          <button id="closeErrorBtn" class="close-btn">Close</button>
+        </div>
       </div>
     </div>
 
