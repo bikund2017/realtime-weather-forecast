@@ -1,7 +1,12 @@
-const express = require("express");
-const dotenv = require("dotenv");
+import express from "express";
+import { config } from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,6 +20,8 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.get("/api/weather", async (req, res) => {
   try {
@@ -76,6 +83,10 @@ app.get("/api/forecast", async (req, res) => {
 
 app.get("/api", (req, res) => {
   res.json({ ok: true });
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 function safeParseJson(text) {
