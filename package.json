@@ -1,10 +1,26 @@
 {
-  "name": "weather-forecast-app",
-  "version": "1.0.0",
-  "description": "Full-stack weather forecast application",
+  "name": "modern-weather-forecast-app",
+  "version": "2.0.0",
+  "description": "Real-time weather forecast application",
+  "type": "module",
+  "main": "backend/server.js",
   "scripts": {
-    "build": "echo 'Frontend is static, no build needed'",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "dev": "NODE_ENV=development node backend/server.js"
+  },
+  "keywords": [
+    "weather",
+    "forecast",
+    "javascript",
+    "api-integration"
+  ],
+  "author": {
+    "name": "Bikund Singh"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bikund2017/realtime-weather-forecast.git"
   },
   "engines": {
     "node": ">=18.0.0"
